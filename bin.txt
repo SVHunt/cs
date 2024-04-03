@@ -1,0 +1,547 @@
+exp1
+
+signal_length = 1000;
+signal_1 = randn(1, signal_length);
+signal_2 = randn(1, signal_length);
+autocorr_result = xcorr(signal_1, signal_2);
+lags = -(signal_length - 1):(signal_length - 1);
+figure;
+plot(lags, autocorr_result);
+title('Autocorrelation of Random Signals');
+xlabel('Lag');
+ylabel('Autocorrelation');
+grid on;
+[psd, frequencies] = pwelch(signal_1, [], [], [], 1);
+figure;
+semilogy(frequencies, psd);
+title('Power Spectral Density of Signal 1');
+xlabel('Frequency (Hz)');
+ylabel('Power/Frequency (dB/Hz)');
+grid on;
+[psd, frequencies] = pwelch(signal_2, [], [], [], 1);
+figure;
+semilogy(frequencies, psd);
+title('Power Spectral Density of Signal 2');
+xlabel('Frequency (Hz)');
+ylabel('Power/Frequency (dB/Hz)');
+grid on;
+
+exp1b
+
+Fs = 1000;
+T = 1/Fs;
+t = 0:T:1;
+L = length(t);
+f_cutoff_low = 50;
+f_center = 200; 
+f_width = 50;
+x_lowpass = randn(1, L); 
+[b, a] = butter(6, f_cutoff_low/(Fs/2));
+x_lowpass = filter(b, a, x_lowpass); 
+x_bandpass = randn(1, L);
+f_low = f_center - f_width/2;
+f_high = f_center + f_width/2;
+[b, a] = butter(6, [f_low/(Fs/2), f_high/(Fs/2)], 'bandpass');
+x_bandpass = filter(b, a, x_bandpass);
+figure;
+subplot(2,1,1);
+plot(t, x_lowpass);
+title('Lowpass Random Process');
+xlabel('Time (s)');
+ylabel('Amplitude');
+subplot(2,1,2);
+plot(t, x_bandpass);
+title('Bandpass Random Process');
+xlabel('Time (s)');
+ylabel('Amplitude');
+
+exp2
+
+population_size = 10000; num_samples = 1000;
+sample_size = 30;
+population = exprnd(2, 1, population_size);
+sample_means = zeros(1, num_samples);
+for i=1:num_samples
+sample = randsample(population, sample_size, true);
+sample_means(i) = mean(sample);
+end
+figure(1);
+subplot(2, 1, 1);
+histogram(population, 'Normalization', 'pdf', 'EdgeColor','none'); title("Histogram of the population");
+xlabel("value");
+ylabel("probability density");
+subplot(2, 1, 2);
+histogram(sample_means, 'Normalization', 'pdf', 'EdgeColor','none'); title("Sample means of population");
+xlabel("sample"); ylabel("Sample means");
+mu_population = mean(population); sigma_population = std(population); expected_mean = mean(sample_means);
+expected_std = sigma_population/sqrt(num_samples);
+x = linspace(min(sample_means), max(sample_means), 100);
+y = normpdf(x, expected_mean, expected_std);
+figure(2);
+plot(x, y, 'r', 'LineWidth', 2); xlabel("sample mean");
+ylabel("probability value"); title("PDF of sample means");
+
+exp3
+
+tfinal=0.01;
+tm=0:0.00001:tfinal;
+w1=2*pi*400;
+w2=2*pi*700;
+w3=2*pi*1000;
+x=cos(w1*tm)+sin(w2*tm)+cos(w3*tm);
+
+subplot(411);
+figure(1);
+plot(tm,x,'r-');
+%undersamp
+fs=700;
+ts=0:1/fs:tfinal;
+xs=cos(w1*ts)+sin(w2*ts)+cos(w3*ts);
+subplot(412);
+stairs(ts,xs);
+%criticalsamp
+fs=2000;
+ts=0:1/fs:tfinal;
+xs=cos(w1*ts)+sin(w2*ts)+cos(w3*ts);
+subplot(413);
+stairs(ts,xs);
+%oversamp
+fs=6000;
+ts=0:1/fs:tfinal;
+xs=cos(w1*ts)+sin(w2*ts)+cos(w3*ts);
+subplot(414);
+stairs(ts,xs);
+
+%undersamp
+fs=700;
+t=0:1/fs:6/fs;
+xs=cos(w1*t)+sin(w2*t)+cos(w3*t);
+xf=abs(fft(xs));
+xfl=0:length(xf)-1;
+figure(2);
+subplot(611);
+stem(100*xfl,xf);
+rx=ifft(fft(xs));
+subplot(612);
+plot(t,rx);
+%criticalsamp
+fs=2000;
+t=0:1/fs:19/fs;
+xs=cos(w1*t)+sin(w2*t)+cos(w3*t);
+xf=abs(fft(xs));
+xfl=0:length(xf)-1;
+subplot(613);
+stem(100*xfl,xf);
+rx=ifft(fft(xs));
+subplot(614);
+plot(t,rx);
+%oversamp
+fs=6000;
+t=0:1/fs:59/fs;
+xs=cos(w1*t)+sin(w2*t)+cos(w3*t);
+xf=abs(fft(xs));
+xfl=0:length(xf)-1;
+subplot(615);
+stem(100*xfl,xf);
+rx=ifft(fft(xs));
+subplot(616);
+plot(t,rx);
+
+exp5
+
+
+clear all;
+clc;
+t=0:0.01:10;
+a=sin(t);
+[sqnr8,aquan8]=upcm(a,8);
+[sqnr16,aquan16]=upcm(a,16);
+display(sqnr8)
+display(sqnr16)
+plot(t,a,'-',t,aquan8,'-',t,aquan16,'-');
+legend('original','8bit','16bit');
+function [sqnr,aquan]=upcm(a,n)
+    amax=max(abs(a));
+    aquan=a/amax;
+    d=2/n;
+    q=d.*[0:n-1];
+    q=q-((n-1)/2)*d;
+    for i=1:n
+        aquan(find((q(i)-d/2<=aquan)&(aquan<=q(i)+d/2)))=q(i).*ones(1,length(find((q(i)-d/2<=aquan)&(aquan<=q(i)+d/2))));
+    end
+    aquan=aquan*amax;
+    sqnr=20*log10((norm(a))/(norm(a-aquan)));
+end
+
+exp5b
+
+clear all;
+clc;
+t=[0:0.01:10];
+a=sin(t);
+[sqnr,aquan,code]=mula_pcm(a,16,255);
+display('sqnr');
+plot(t,a,'-',t,aquan,'-');
+function[sqnr,a_quan,code]=u_pcm(a,n)
+amax=max(abs(a));
+a_quan=a/amax;
+d=2/n;
+q=d.*[0:n-1];
+q=q-((n-1)/2)*d;
+for i=1:n
+a_quan(find((q(i)-d/2<=a_quan)&(a_quan<=q(i)+d/2)))=q(i).*ones(1,length(find((q(i)-d/2<=a_quan)&(a_quan<=q(i)+d/2))));
+end
+a_quan=a_quan*amax;
+nu=ceil(log2(n));
+code=zeros(length(a),nu);
+sqnr=20*log10(norm(a)/norm(a-a_quan));
+end
+function[sqnr,a_quan,code]=mula_pcm(a,n,mu)
+[y,maximum]=mulaw(a,mu);
+[sqnr,y_q,code]=u_pcm(y,n);
+a_quan=invmulaw(y_q,mu);
+q_quan=maximum*a_quan;
+sqnr=20*log10(norm(a)/norm(a-a_quan));
+end
+function[y,a]=mulaw(x,mu)
+a=max(abs(x));
+y=(log(1+mu*abs(x/a))./log(1+mu)).*sign(x);
+end
+function x=invmulaw(y,mu)
+x=(((1+mu).^(abs(y))-1)./mu).*sign(y);
+end
+
+
+
+exp6
+
+clc;
+clear all;
+ts=0.02;
+td=0.01;
+t=0:td:5;
+xin=8*sin(2*pi*t);
+del=0.1;
+ADMout=admfunc(xin,del,ts,td);
+plot(t,xin,'-',t,ADMout,'-')
+function [ADMout]=admfunc(xin,del,ts,td)
+    if(round(ts/td)>=2)
+        n=round(ts/td);
+        xnew=downsample(xin,n);
+        xnl=length(xnew);
+        xol=length(xin);
+        sum=0;
+        cnt1=0;
+        cnt2=0;
+        ADMout=zeros(xol);
+        for i=1:xnl
+            if(sum==xnew(i))
+            elseif(xnew(i)>sum)
+                if(cnt1<2)
+                    sum=sum+del;
+                elseif(cnt1==2)
+                    sum=sum+2*del;
+                elseif(cnt1==3)
+                    sum=sum+4*del;
+                else
+                    sum=sum+8*del;
+                end
+                if(xnew(i)>sum)
+                    cnt1=cnt1+1;
+                else
+                    cnt1=0;
+                end
+            else
+                if(cnt2<2)
+                    sum=sum-del;
+                elseif(cnt2==2)
+                    sum=sum-2*del;
+                elseif(cnt2==3)
+                    sum=sum-4*del;
+                else
+                    sum=sum-8*del;
+                end
+                if(xnew(i)<sum)
+                    cnt2=cnt2+1;
+                else
+                    cnt2=0;
+                end
+            end
+            ADMout(((i-1)*n+1):(i*n))=sum; 
+        end
+    end
+end
+
+exp6b
+
+clc;
+clear all;
+t=0:0.01:5;
+x=2*sin(2*pi*t);
+hold on;
+plot(x);
+xn(1)=0;
+delta=0.2;
+l=length(x);
+for i=1:l
+    if xn(i)<x(i)
+        xn(i+1)=xn(i)+delta;
+    else
+        xn(i+1)=xn(i)-delta;
+    end
+end
+stairs(xn)
+
+
+exp7
+
+clc;
+close all;
+t=-5:0.01:5;
+fs=1000;
+ts=-5:1/fs:5;
+w=2*pi*2;
+y=@(t)sin(w.*t);
+[u,q]=SDQ(y(ts),ts);
+z=0;
+for k=1:length(ts)
+    z=z+q(k).*sinc(w.*(t-ts(k)));
+end
+figure(1);
+subplot(311);
+plot(t,y(t));
+subplot(312);
+plot(ts,q)
+subplot(313);
+plot(t,z);
+
+function [u,q]=SDQ(y,t)
+    q=zeros(1,length(t));
+    u=zeros(1,length(t));
+    u(1)=0.9;
+    for k=2:length(t)
+        q(k)=sign(u(k-1)+y(k));
+        u(k)=u(k-1)+y(k)-q(k);
+    end
+end
+
+exp8
+
+N=10;
+fs=100;
+a=floor(2*rand(1,N));
+A=5;
+T=1;
+
+U=[];
+for k=1:N
+    U=[U A*a(k)*ones(1,fs)];
+end
+
+Urz=[];
+for k=1:N
+    Urz=[Urz A*a(k)*ones(1,fs/2) zeros(1,fs/2)];
+end
+
+Pnrz=[];
+for k=1:N
+    Pnrz=[Pnrz ((-1)^(a(k)+1))*A*ones(1,fs)]
+end
+
+Prz=[];
+for k=1:N
+    Prz=[Prz ((-1)^(a(k)+1))*A*ones(1,fs/2) zeros(1,fs/2)];
+end
+
+Bnrz=[];
+cnt=1;
+for k= 1:N
+    if a(k)==1
+        if cnt==1
+            Bnrz=[Bnrz A*a(k)*ones(1,fs)];
+            cnt=-1;
+        else
+            Bnrz=[Bnrz -A*a(k)*ones(1,fs)];
+            cnt=1;
+        end
+    else
+        Bnrz=[Bnrz A*a(k)*ones(1,fs)];
+    end
+end
+
+Brz=[];
+cnt=-1;
+for k=1:N
+    if(a(k)==1)
+        if(cnt==-1)
+            Brz=[Brz A*a(k)*ones(1,fs/2) zeros(1,fs/2)];
+            cnt=1;
+        else
+            Brz=[Brz -A*a(k)*ones(1,fs/2) zeros(1,fs/2)];
+            cnt=-1;
+        end
+    else
+        Brz=[Brz A*a(k)*ones(1,fs)];
+    end
+end
+
+Man=[];
+for k=1:N
+    c=ones(1,fs/2);
+    b=-1*ones(1,fs/2);
+    p=[c b];
+    Man=[Man ((-1)^(a(k)+1))*A*p];
+end
+T = linspace(0,N*T, length(U));% Time vector % Lengths of all codes are same
+    figure(1)
+    subplot(4, 1, 1); 
+    plot(T,U,'LineWidth',2)
+    title('Unipolar NRZ')
+    grid on
+    
+    subplot(4, 1, 2); 
+    plot(T,Urz,'LineWidth',2)
+    title('Unipolar RZ')
+    grid on
+    
+    subplot(4, 1, 3); 
+    plot(T,Pnrz,'LineWidth',2)
+    title('Polar NRZ')
+    grid on
+    
+    subplot(4, 1, 4); plot(T,Prz,'LineWidth',2)
+    title('Polar RZ')
+    grid on
+    
+    figure(2)
+    subplot(3, 1, 1); plot(T,Bnrz,'LineWidth',2)
+    title('Bipolar NRZ')
+    grid on
+    
+    subplot(3, 1, 2); plot(T,Brz,'LineWidth',2)
+    title('Bipolar RZ / RZ-AMI')
+    grid on
+    
+    subplot(3, 1, 3); plot(T,Man,'LineWidth',2)
+    title('Split-phase or Manchester code')
+    grid on
+
+figure(3);
+v=1;
+r=1;
+f=0:0.001:2;
+f=f+1e-10;
+f_zero=1e-9;
+t=1;
+s_uni=((v^2)*t/4)*((sin(pi*f*t)./(pi*f*t))).^2;
+s_uni(1)=f_zero+s_uni(1)+(v^2 /4);
+stem(f_zero,s_uni(1));
+hold on;
+
+s_pnrz=(v^2 *t)*((sin(pi*f*t))./(pi*f*t)).^2;
+plot(f,s_pnrz);
+
+s_brz=(v^2 *t/4)*((sin(pi*f*t/2))./(pi*f*t/2)).^2 .* (sin(pi*f*t)).^2;
+plot(f,s_brz);
+
+s_man=(v^2 *t)*((sin(pi*f*t/2))./(pi*f*t/2)).^2 .* ((sin(pi*f*t/2))).^2;
+plot(f,s_man);
+hold off;
+figure(4);
+E=[0:1:25];
+p1=(0.5)*erfc(E/2);
+p2=(0.5)*erfc(E);
+p3=0.75*erfc(E/2);
+E=10*log10(E);
+semilogy(E,p1,'-k',E,p2,'-r',E,p3,'-b');
+
+exp9
+
+#include“dsk6416_aic23.h” //support file for codec, DSK
+Uint32 fs=DSK6416_AIC23_FREQ_8KHZ; //set sampling rate
+#define DSK6416_AIC23_INPUT_MIC 0x0015
+#define DSK6416_AIC23_INPUT_LINE 0x0011
+Uint16 inputsource=DSK6416_AIC23_INPUT_LINE; // select input
+#include <math.h>; //for performing modulation operation
+static short in_buffer[100];
+Uint32 sample_data;
+short k=0;
+//float filter_Coeff[] = { -0.0017,-0.0020,-0.0024,-0.0027,-0.0021,
+//0.0000,0.0044 ,0.0117,0.0221,0.0351,0.0500,0.0655,0.0799,0.0917,
+//0.0994,0.1021,0.0994,0.0917,0.0799,0.0655,0.0500, 0.0351,0.0221,
+//0.0117,0.0044,0.0000,-0.0021,-0.0027, -0.0024,-0.0020, -0.0017};
+// for fc=400Hz
+float filter_Coeff[] = { -0.0017, 0.0000,0.0029,-0.0000,-0.0067, 0.0000, 0.0141,-0.0000,-
+0.0268, 0.0000, 0.0491,-0.0000,-0.0969,0.0000,0.3156, 0.5008,0.3156, 0.0000,-0.0969,-
+0.0000, 0.0491,0.0000,-0.0268,-0.0000,0.0141, 0.0000,-0.0067,-0.0000, 0.0029, 0.0000,-
+0.0017};
+// for fc=2KHz
+short l_input, r_input,l_output, r_output;
+void comm_intr();
+void output_left_sample(short);
+short input_left_sample();
+signed int FIR_FILTER(float *h, signed int);
+interrupt void c_int11() //interrupt service routine
+{
+l_input = input_left_sample(); //inputs data
+l_output=(Int16)FIR_FILTER(filter_Coeff ,l_input);
+output_left_sample(l_output);
+return;
+} // end of interrupt routine
+signed int FIR_FILTER(float * h, signed int x)
+{
+int i=0;
+signed long output=0;
+in_buffer[0] = x; /* new input at buffer[0] */
+for(i=31;i>0;i--)
+in_buffer[i] = in_buffer[i-1]; /* shuffle the buffer */
+for(i=0;i<31;i++)
+output = output + h[i] * in_buffer[i];
+return(output);
+}
+void main()
+{
+comm_intr(); //init DSK, codec, McBSP
+while(1);
+}
+
+
+exp10
+
+
+#include”DSK6416_AIC23”;
+Uint32 fs=DSK6416_AIC23_FREQ_8KHZ;
+#define DSK6416_AIC23_INPUT_MIC 0x0015
+#define DSK6416_AIC23_INPUT_LINE 0x0011
+Uint16 inputsource=DSK6416_AIC23_INPUT_LINE;
+#include”bsl1800int.cof”;
+short input_left_sample();
+void output_left_sample(short);
+void comm_intr();
+short w[NUM_SECTIONS][2] = {0};
+interrupt void c_int11() 
+{
+short section; 
+short input; 
+int wn,yn;
+input = input_left_sample();
+for (section=0 ; section< NUM_SECTIONS ; section++)
+{
+wn = input - ((a[section][0]*w[section][0])&>>;15) - ((a[section][1]*w[section][1])&>>15);
+yn = ((b[section][0]*wn)&>>15) + ((b[section][1]*w[section][0])&>>15) +
+((b[section][2]*w[section][1])&>>15);
+w[section][1] = w[section][0];
+w[section][0] = wn;
+input = yn;
+}
+output_left_sample((short)(yn));
+return;
+}
+void main()
+{
+comm_intr(); 
+while(1); 
+}
+
+
+
